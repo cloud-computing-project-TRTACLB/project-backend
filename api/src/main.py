@@ -4,9 +4,9 @@ app = Flask(__name__)
 
 # Sample data
 items = [
-    {'id': 1, 'name': 'Lavender item', 'price': 12.99},
-    {'id': 2, 'name': 'Vanilla item', 'price': 10.99},
-    {'id': 3, 'name': 'Rose item', 'price': 14.99}
+    {'id': 1, 'name': 'Lavender Candle', 'price': 12.99},
+    {'id': 2, 'name': 'Vanilla Candle', 'price': 10.99},
+    {'id': 3, 'name': 'Rose Candle', 'price': 14.99}
 ]
 
 @app.route('/items', methods=['GET'])
