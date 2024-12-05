@@ -14,13 +14,13 @@ def test_get_all_items(client):
 def test_get_single_candle(client):
     response = client.get('/items/1')
     assert response.status_code == 200
-    assert response.get_json()['name'] == 'Lavender item'
+    assert response.get_json()['name'] == 'Lavender Candle'
 
 def test_add_candle(client):
     new_candle = {'name': 'Citrus Candle', 'price': 11.99}
     response = client.post('/items', json=new_candle)
     assert response.status_code == 201
-    assert response.get_json()['name'] == 'Citrus item'
+    assert response.get_json()['name'] == 'Citrus Candle'
 
 def test_update_candle(client):
     updated_data = {'price': 15.99}
