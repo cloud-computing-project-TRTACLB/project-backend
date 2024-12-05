@@ -5,7 +5,7 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Copier les fichiers nécessaires dans le conteneur
-COPY api/requirements.txt /app/requirements.txt
+COPY /requirements.txt /app/requirements.txt
 COPY api/src /app/src
 
 # Installer les dépendances Python
