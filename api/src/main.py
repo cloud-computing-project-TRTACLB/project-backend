@@ -5,7 +5,7 @@ app = Flask(__name__)
 # Sample data
 items = [
     {'id': 1, 'name': 'Lavender Candle', 'price': 13.99},
-    {'id': 2, 'name': 'Vanilla Candle', 'price': 10.99},
+    {'id': 2, 'name': 'Vanilla Candle', 'price': 11.99},
     {'id': 3, 'name': 'Rose Candle', 'price': 14.99}
 ]
 
