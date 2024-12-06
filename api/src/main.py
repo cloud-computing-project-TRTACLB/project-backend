@@ -3,43 +3,43 @@ from flask import Flask, jsonify, request
 app = Flask(__name__)
 
 # Sample data
-candles = [
+items = [
     {'id': 1, 'name': 'Lavender Candle', 'price': 12.99},
-    {'id': 2, 'name': 'Vanilla Candle', 'price': 10.99},
-    {'id': 3, 'name': 'Rose Candle', 'price': 14.99}
+    {'id': 2, 'name': 'Vanilla Candle', 'price': 11.99},
+    {'id': 3, 'name': 'Rose Candle', 'price': 19.99}
 ]
 
-@app.route('/candles', methods=['GET'])
-def get_candles():
-    return jsonify(candles)
+@app.route('/items', methods=['GET'])
+def get_items():
+    return jsonify(items)
 
-@app.route('/candles/<int:candle_id>', methods=['GET'])
-def get_candle(candle_id):
-    candle = next((c for c in candles if c['id'] == candle_id), None)
-    if candle is None:
-        return jsonify({'error': 'Candle not found'}), 404
-    return jsonify(candle)
+@app.route('/items/<int:item_id>', methods=['GET'])
+def get_item(item_id):
+    item = next((c for c in items if c['id'] == item_id), None)
+    if item is None:
+        return jsonify({'error': 'item not found'}), 404
+    return jsonify(item)
 
-@app.route('/candles', methods=['POST'])
-def add_candle():
-    new_candle = request.get_json()
-    new_candle['id'] = len(candles) + 1
-    candles.append(new_candle)
-    return jsonify(new_candle), 201
+@app.route('/items', methods=['POST'])
+def add_item():
+    new_item = request.get_json()
+    new_item['id'] = len(items) + 1
+    items.append(new_item)
+    return jsonify(new_item), 201
 
-@app.route('/candles/<int:candle_id>', methods=['PUT'])
-def update_candle(candle_id):
-    candle = next((c for c in candles if c['id'] == candle_id), None)
-    if candle is None:
-        return jsonify({'error': 'Candle not found'}), 404
+@app.route('/items/<int:item_id>', methods=['PUT'])
+def update_item(item_id):
+    item = next((c for c in items if c['id'] == item_id), None)
+    if item is None:
+        return jsonify({'error': 'item not found'}), 404
     updated_data = request.get_json()
-    candle.update(updated_data)
-    return jsonify(candle)
+    item.update(updated_data)
+    return jsonify(item)
 
-@app.route('/candles/<int:candle_id>', methods=['DELETE'])
-def delete_candle(candle_id):
-    global candles
-    candles = [c for c in candles if c['id'] != candle_id]
+@app.route('/items/<int:item_id>', methods=['DELETE'])
+def delete_item(item_id):
+    global items
+    items = [c for c in items if c['id'] != item_id]
     return '', 204
 
 if __name__ == '__main__':

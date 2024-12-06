@@ -44,9 +44,12 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build and push Docker image
-      run: |
-        docker build -t ghcr.io/${{ github.repository_owner }}/my-flask-api:latest .
-        docker push ghcr.io/${{ github.repository_owner }}/my-flask-api:latest
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: ghcr.io/${{ github.repository_owner }}/my-flask-api:latest
 
   deploy:
     needs: build_and_publish
