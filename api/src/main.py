@@ -1,16 +1,24 @@
 from flask import Flask, jsonify, request
 from functools import wraps
 import jwt
+from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import os
-
+import datetime
+import pyodbc
 # Load the .env file
 load_dotenv()
 
+# Charger les informations de connexion à la base de données depuis les variables d'environnement
+private_endpoint_ip = os.getenv('PRIVATE_ENDPOINT_IP')
+sql_connection_string = os.getenv('SQL_CONNECTION_STRING')
 app = Flask(__name__)
 
 # Retrieve the secret key from the environment
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv("SECRET_KEY")
+print("Secret key:", SECRET_KEY)  # Debugging
+# In-memory user database
+users = {}
 
 # Sample data
 items = [
@@ -23,10 +31,12 @@ def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.headers.get('x-access-token')
+        print(f"Received token: {token}")
         if not token:
             return jsonify({'message': 'Token is missing!'}), 403
         try:
             data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            request.user = data['username']
         except jwt.ExpiredSignatureError:
             return jsonify({'message': 'Token has expired!'}), 403
         except jwt.InvalidTokenError:
@@ -34,43 +44,99 @@ def token_required(f):
         return f(*args, **kwargs)
     return decorated
 
+# Route for user registration (signup)
+@app.route('/signup', methods=['POST'])
+def signup():
+    data = request.get_json()
+    username = data.get('username')
+    password = str(data.get('password'))
+
+    if not username or not password:
+        return jsonify({'message': 'Username and password are required!'}), 400
+
+    if username in users:
+        return jsonify({'message': 'User already exists!'}), 409
+
+    # Hash the password for storage
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+    users[username] = {'password': hashed_password}
+    return jsonify({'message': 'User registered successfully!'}), 201
+
+# Route for user login (authentication)
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    print("Received data:", data)  # Debugging
+    username = data.get('username')
+    password = str(data.get('password'))
+
+    if not username or not password:
+        return jsonify({'message': 'Username and password are required!'}), 400
+
+    user = users.get(username)
+    if not user or not check_password_hash(user['password'], password):
+        return jsonify({'message': 'Invalid credentials!'}), 401
+    expiration = datetime.datetime.now() + datetime.timedelta(hours=1)
+    # Generate a JWT token
+    token = jwt.encode({
+        'username': username,
+        'exp': expiration
+    }, SECRET_KEY, algorithm="HS256")
+
+    return jsonify({'token': token})
+
+# Protected route example
+@app.route('/profile', methods=['GET'])
+@token_required
+def profile():
+    return jsonify({'message': f'Welcome, {request.user}!'})
+
+# Route for getting items
 @app.route('/items', methods=['GET'])
 @token_required
 def get_items():
     return jsonify(items)
 
-@app.route('/items/<int:item_id>', methods=['GET'])
-@token_required
-def get_item(item_id):
-    item = next((c for c in items if c['id'] == item_id), None)
-    if item is None:
-        return jsonify({'error': 'item not found'}), 404
-    return jsonify(item)
+# Exemple de connexion à la base de données SQL Azure
+def get_db_connection():
+    connection = pyodbc.connect(sql_connection_string)
+    return connection
 
-@app.route('/items', methods=['POST'])
-@token_required
-def add_item():
-    new_item = request.get_json()
-    new_item['id'] = len(items) + 1
-    items.append(new_item)
-    return jsonify(new_item), 201
+# Utilisation de cette connexion dans une route
+@app.route('/data', methods=['GET'])
+def get_data():
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM my_table")  # Exemple de requête
+    rows = cursor.fetchall()
+    return jsonify({'data': rows})
 
-@app.route('/items/<int:item_id>', methods=['PUT'])
-@token_required
-def update_item(item_id):
-    item = next((c for c in items if c['id'] == item_id), None)
-    if item is None:
-        return jsonify({'error': 'item not found'}), 404
-    updated_data = request.get_json()
-    item.update(updated_data)
-    return jsonify(item)
+@app.route('/data', methods=['POST'])
+def post_data():
+                data = request.get_json()
+                if not data:
+                    return jsonify({'message': 'No data provided!'}), 400
 
-@app.route('/items/<int:item_id>', methods=['DELETE'])
-@token_required
-def delete_item(item_id):
-    global items
-    items = [c for c in items if c['id'] != item_id]
-    return '', 204
+                connection = get_db_connection()
+                cursor = connection.cursor()
 
+                # Assuming the data contains 'name' and 'value' fields
+                name = data.get('name')
+                value = data.get('value')
+
+                if not name or not value:
+                    return jsonify({'message': 'Name and value are required!'}), 400
+
+                try:
+                    cursor.execute("INSERT INTO my_table (name, value) VALUES (?, ?)", (name, value))
+                    connection.commit()
+                except Exception as e:
+                    return jsonify({'message': f'An error occurred: {str(e)}'}), 500
+                finally:
+                    cursor.close()
+                    connection.close()
+
+                return jsonify({'message': 'Data inserted successfully!'}), 201
+   
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
