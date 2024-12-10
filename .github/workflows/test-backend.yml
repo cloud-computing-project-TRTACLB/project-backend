@@ -43,12 +43,14 @@ jobs:
           terraform apply -auto-approve
       - name: Check Terraform Outputs (Debugging)
         run: |
+          cd infrastructure
           echo "Private Endpoint IP: $(terraform output -raw private_endpoint_ip)"
           echo "SQL Connection String: $(terraform output -raw sql_connection_string)"
           echo "App Name: $(terraform output -raw app_name)"
       - name: Capture Terraform Outputs
         id: capture_outputs
         run: |
+          cd infrastructure
           echo "PRIVATE_ENDPOINT_IP=$(terraform output -raw private_endpoint_ip)" >> $GITHUB_ENV
           echo "SQL_CONNECTION_STRING=$(terraform output -raw sql_connection_string)" >> $GITHUB_ENV  
           echo "APP_NAME=$(terraform output -raw app_name)" >> $GITHUB_ENV 
