@@ -22,6 +22,7 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan
+     
 
   apply-terraform:
     needs: plan-terraform
@@ -36,13 +37,18 @@ jobs:
           terraform_version: 1.5.0
 
       - name: Terraform Apply
-        id: terraform_apply
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         run: terraform apply -auto-approve
       - name: Capture Terraform Outputs
         id: capture_outputs
         run: |
           echo "PRIVATE_ENDPOINT_IP=$(terraform output -raw private_endpoint_ip)" >> $GITHUB_ENV
           echo "SQL_CONNECTION_STRING=$(terraform output -raw sql_connection_string)" >> $GITHUB_ENV  
+          echo "APP_NAME=$(terraform output -raw app_name)" >> $GITHUB_ENV  
   test:
     needs: apply-terraform
     runs-on: ubuntu-latest
@@ -88,10 +94,11 @@ jobs:
       - name: Azure Web App Deploy
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ secrets.AZURE_APP_NAME }}
+          app-name: ${{ env.APP_NAME }}
           slot-name: production
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           images: 'ghcr.io/${{ github.repository_owner }}/my-flask-api:latest'
         env:
           PRIVATE_ENDPOINT_IP: ${{env.PRIVATE_ENDPOINT_IP }}
           SQL_CONNECTION_STRING: ${{env.SQL_CONNECTION_STRING }}
+          APP_NAME: ${{env.APP_NAME }}
