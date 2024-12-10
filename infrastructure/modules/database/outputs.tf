@@ -6,5 +6,4 @@ output "private_endpoint_ip" {
 
 output "sql_connection_string" {
   value = "jdbc:sqlserver://${azurerm_mssql_server.server.fully_qualified_domain_name};database=${azurerm_mssql_database.db.name};user=${var.admin_user};password=${var.admin_password};"
-
 }

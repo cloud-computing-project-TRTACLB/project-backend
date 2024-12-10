@@ -25,7 +25,3 @@ resource "azurerm_subnet" "subnets" {
     }
   }
 }
-
-output "subnets" {
-  value = azurerm_subnet.subnets[*].id
-}
