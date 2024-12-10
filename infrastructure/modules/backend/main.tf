@@ -26,3 +26,4 @@ resource "azurerm_linux_web_app" "app" {
 resource "random_id" "app_suffix" {
   byte_length = 6
 }
+ 
