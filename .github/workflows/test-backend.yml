@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  plan-terraform:
+  plan-and-apply-terraform:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -32,36 +32,24 @@ jobs:
           cd infrastructure
           terraform plan
      
-
-  apply-terraform:
-    needs: plan-terraform
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.0
-
-      - name: Terraform Apply
-        env:
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-        run: |
-          cd infrastructure
-          terraform apply -auto-approve
+          - name: Terraform Apply
+          env:
+            ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+            ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+            ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+            ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          run: |
+            cd infrastructure
+            terraform apply -auto-approve
       - name: Capture Terraform Outputs
         id: capture_outputs
         run: |
           echo "PRIVATE_ENDPOINT_IP=$(terraform output -raw private_endpoint_ip)" >> $GITHUB_ENV
           echo "SQL_CONNECTION_STRING=$(terraform output -raw sql_connection_string)" >> $GITHUB_ENV  
-          echo "APP_NAME=$(terraform output -raw app_name)" >> $GITHUB_ENV  
+          echo "APP_NAME=$(terraform output -raw app_name)" >> $GITHUB_ENV 
+   
   test:
-    needs: apply-terraform
+    needs: plan-and-apply-terraform
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
