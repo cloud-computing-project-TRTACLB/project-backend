@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from app.models.basket import Basket
+from models.basket import Basket
 
 basket_bp = Blueprint('baskets', __name__)
 

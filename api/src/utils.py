@@ -1,5 +1,3 @@
-#Ce fichier configure SQLAlchemy pour se connecter à la base de données Azure
-
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
