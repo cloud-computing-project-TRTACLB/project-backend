@@ -51,9 +51,12 @@ jobs:
         id: capture_outputs
         run: |
           cd infrastructure
-          echo "PRIVATE_ENDPOINT_IP=$(terraform output -raw private_endpoint_ip)" >> $GITHUB_ENV
-          echo "SQL_CONNECTION_STRING=$(terraform output -raw sql_connection_string)" >> $GITHUB_ENV  
-          echo "APP_NAME=$(terraform output -raw app_name)" >> $GITHUB_ENV 
+          PRIVATE_ENDPOINT_IP=$(terraform output -raw private_endpoint_ip 2>/dev/null | grep -v "::debug::")
+          SQL_CONNECTION_STRING=$(terraform output -raw sql_connection_string 2>/dev/null | grep -v "::debug::")
+          APP_NAME=$(terraform output -raw app_name 2>/dev/null | grep -v "::debug::")
+          echo "PRIVATE_ENDPOINT_IP=$PRIVATE_ENDPOINT_IP" >> $GITHUB_ENV
+          echo "SQL_CONNECTION_STRING=$SQL_CONNECTION_STRING" >> $GITHUB_ENV
+          echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
    
   test:
     needs: plan-and-apply-terraform
