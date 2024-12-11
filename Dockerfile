@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt && \
 # Passer les variables d'environnement
 ENV PRIVATE_ENDPOINT_IP=${PRIVATE_ENDPOINT_IP}
 ENV SQL_CONNECTION_STRING=${SQL_CONNECTION_STRING}
+ENV SECRET_KEY=${SECRET_KEY}
 # Exposer le port utilisé par Flask (exemple : 5000)
 EXPOSE 5000
 
