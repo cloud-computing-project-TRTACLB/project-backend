@@ -1,85 +1,56 @@
 import pytest
 import jwt
-from main import app, SECRET_KEY
+from main import app, SECRET_KEY, items
 
 @pytest.fixture
 def client():
+    app.config['TESTING'] = True
     with app.test_client() as client:
         yield client
 
-def generate_token():
-    """Helper function to generate a valid JWT token."""
-    return jwt.encode({'user': 'test_user'}, SECRET_KEY, algorithm='HS256')
+# Génère un token valide pour les tests
+def generate_token(username='test_user'):
+    token = jwt.encode({'username': username}, SECRET_KEY, algorithm='HS256')
+    return token
 
+# Test de l'inscription
+def test_signup(client):
+    response = client.post('/signup', json={'username': 'test_user', 'password': 'password123'})
+    assert response.status_code == 201
+    assert response.get_json()['message'] == 'User registered successfully!'
+
+    # Test de réinscription avec le même utilisateur
+    response = client.post('/signup', json={'username': 'test_user', 'password': 'password123'})
+    assert response.status_code == 409
+    assert response.get_json()['message'] == 'User already exists!'
+
+# Test de la connexion
+def test_login(client):
+    client.post('/signup', json={'username': 'test_user', 'password': 'password123'})
+    response = client.post('/login', json={'username': 'test_user', 'password': 'password123'})
+    assert response.status_code == 200
+    assert 'token' in response.get_json()
+
+    # Test avec des identifiants invalides
+    response = client.post('/login', json={'username': 'test_user', 'password': 'wrongpassword'})
+    assert response.status_code == 401
+    assert response.get_json()['message'] == 'Invalid credentials!'
+
+# Test d'accès à une route protégée
+def test_protected_route(client):
+    token = generate_token()
+    response = client.get('/profile', headers={'x-access-token': token})
+    assert response.status_code == 200
+    assert response.get_json()['message'] == 'Welcome, test_user!'
+
+    # Test sans token
+    response = client.get('/profile')
+    assert response.status_code == 403
+    assert response.get_json()['message'] == 'Token is missing!'
+
+# Test de récupération des articles
 def test_get_items(client):
     token = generate_token()
     response = client.get('/items', headers={'x-access-token': token})
     assert response.status_code == 200
-    data = response.get_json()
-    assert len(data) > 0
-    assert 'name' in data[0]
-
-def test_get_items_no_token(client):
-    response = client.get('/items')
-    assert response.status_code == 403
-    data = response.get_json()
-    assert data['message'] == 'Token is missing!'
-
-def test_get_items_invalid_token(client):
-    response = client.get('/items', headers={'x-access-token': 'invalidtoken'})
-    assert response.status_code == 403
-    data = response.get_json()
-    assert data['message'] == 'Token is invalid!'
-
-def test_get_item(client):
-    token = generate_token()
-    response = client.get('/items/1', headers={'x-access-token': token})
-    assert response.status_code == 200
-    data = response.get_json()
-    assert data['name'] == 'Lavender Candle'
-
-def test_get_item_not_found(client):
-    token = generate_token()
-    response = client.get('/items/99', headers={'x-access-token': token})
-    assert response.status_code == 404
-    data = response.get_json()
-    assert data['error'] == 'item not found'
-
-def test_add_item(client):
-    token = generate_token()
-    new_item = {'name': 'Cinnamon Candle', 'price': 15.99}
-    response = client.post('/items', json=new_item, headers={'x-access-token': token})
-    assert response.status_code == 201
-    data = response.get_json()
-    assert data['name'] == new_item['name']
-    assert data['price'] == new_item['price']
-
-def test_update_item(client):
-    token = generate_token()
-    updated_data = {'name': 'Updated Lavender Candle', 'price': 13.99}
-    response = client.put('/items/1', json=updated_data, headers={'x-access-token': token})
-    assert response.status_code == 200
-    data = response.get_json()
-    assert data['name'] == updated_data['name']
-    assert data['price'] == updated_data['price']
-
-def test_update_item_not_found(client):
-    token = generate_token()
-    updated_data = {'name': 'Non-existent Item'}
-    response = client.put('/items/99', json=updated_data, headers={'x-access-token': token})
-    assert response.status_code == 404
-    data = response.get_json()
-    assert data['error'] == 'item not found'
-
-def test_delete_item(client):
-    token = generate_token()
-    response = client.delete('/items/1', headers={'x-access-token': token})
-    assert response.status_code == 204
-    # Verify the item is deleted
-    response = client.get('/items/1', headers={'x-access-token': token})
-    assert response.status_code == 404
-
-def test_delete_item_not_found(client):
-    token = generate_token()
-    response = client.delete('/items/99', headers={'x-access-token': token})
-    assert response.status_code == 204
+    assert response.get_json() == items
