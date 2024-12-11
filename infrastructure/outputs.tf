@@ -3,9 +3,9 @@ output "app_name"{
 }
 
 output "private_endpoint_ip"{
-    value = module.database.private_endpoint_ip
+    value = module.database_user.private_endpoint_ip
 }
 
 output "sql_connection_string"{
-    value = module.database.sql_connection_string
+    value = module.database_user.sql_connection_string
 }
