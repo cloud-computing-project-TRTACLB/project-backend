@@ -119,3 +119,8 @@ jobs:
           PRIVATE_ENDPOINT_IP: ${{env.PRIVATE_ENDPOINT_IP }}
           SQL_CONNECTION_STRING: ${{env.SQL_CONNECTION_STRING }}
           APP_NAME: ${{env.APP_NAME }}
+          PUBLISH_PROFILE: ${{env.PUBLISH_PROFILE }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
