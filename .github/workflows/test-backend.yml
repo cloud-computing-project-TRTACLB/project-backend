@@ -31,7 +31,7 @@ jobs:
         run: |
           cd infrastructure
           terraform plan
-     
+
       - name: Terraform Apply
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -54,10 +54,12 @@ jobs:
           PRIVATE_ENDPOINT_IP=$(terraform output -raw private_endpoint_ip 2>/dev/null | grep -v "::debug::")
           SQL_CONNECTION_STRING=$(terraform output -raw sql_connection_string 2>/dev/null | grep -v "::debug::")
           APP_NAME=$(terraform output -raw app_name 2>/dev/null | grep -v "::debug::")
+          PUBLISH_PROFILE=$(terraform output -raw publish_profile 2>/dev/null | grep -v "::debug::")
           echo "PRIVATE_ENDPOINT_IP=$PRIVATE_ENDPOINT_IP" >> $GITHUB_ENV
           echo "SQL_CONNECTION_STRING=$SQL_CONNECTION_STRING" >> $GITHUB_ENV
           echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
-   
+          echo "PUBLISH_PROFILE=$PUBLISH_PROFILE" >> $GITHUB_ENV
+
   test:
     needs: plan-and-apply-terraform
     runs-on: ubuntu-latest
@@ -85,8 +87,8 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     permissions:
-      contents: read 
-      packages: write  
+      contents: read
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -111,8 +113,8 @@ jobs:
         with:
           app-name: ${{ env.APP_NAME }}
           slot-name: production
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: 'ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest'
+          publish-profile: ${{ env.PUBLISH_PROFILE }}
+          images: "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest"
         env:
           PRIVATE_ENDPOINT_IP: ${{env.PRIVATE_ENDPOINT_IP }}
           SQL_CONNECTION_STRING: ${{env.SQL_CONNECTION_STRING }}
