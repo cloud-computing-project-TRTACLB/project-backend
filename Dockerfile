@@ -8,9 +8,6 @@ WORKDIR /app
 COPY requirements.txt /app/requirements.txt
 COPY api/src /app/src
 
-# Copier également le fichier .env dans le conteneur
-COPY .env /app/.env
-
 # Installer les dépendances Python et nettoyer le cache de pip
 RUN pip install --no-cache-dir -r requirements.txt && \
     rm -rf /root/.cache
