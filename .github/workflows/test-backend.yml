@@ -78,6 +78,8 @@ jobs:
       - name: Run tests
         run: |
           pytest
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
   build-and-deploy:
     needs: test
