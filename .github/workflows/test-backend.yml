@@ -58,7 +58,18 @@ jobs:
       
       - name: Check GITHUB_ENV Contents
         run: cat $GITHUB_ENV
-        
+      
+      - name: Debugging - Show environment variables
+        run: |
+          echo "APP_NAME=${{ env.APP_NAME }}"
+          echo "PUBLISH_PROFILE=${{ env.PUBLISH_PROFILE }}"
+          echo "PRIVATE_ENDPOINT_IP=${{ env.PRIVATE_ENDPOINT_IP }}"
+          echo "SQL_CONNECTION_STRING=${{ env.SQL_CONNECTION_STRING }}"
+        env:
+          PRIVATE_ENDPOINT_IP: ${{ env.PRIVATE_ENDPOINT_IP }}
+          SQL_CONNECTION_STRING: ${{ env.SQL_CONNECTION_STRING }}
+          APP_NAME: ${{ env.APP_NAME }}
+          PUBLISH_PROFILE: ${{ env.PUBLISH_PROFILE }}
 
   test:
     needs: plan-and-apply-terraform
@@ -116,13 +127,13 @@ jobs:
       - name: Azure Web App Deploy
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ secrets.APP_NAME }}  # Essayer avec secrets si nécessaire
+          app-name: ${{ env.APP_NAME }}  # Utiliser env ici, pas secrets
           slot-name: production
-          publish-profile: ${{ secrets.PUBLISH_PROFILE }}
+          publish-profile: ${{ env.PUBLISH_PROFILE }}  # Utiliser env ici aussi
           images: "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest"
         env:
-          PRIVATE_ENDPOINT_IP: ${{ secrets.PRIVATE_ENDPOINT_IP }}
-          SQL_CONNECTION_STRING: ${{ secrets.SQL_CONNECTION_STRING }}
-          APP_NAME: ${{ secrets.APP_NAME }}
-          PUBLISH_PROFILE: ${{ secrets.PUBLISH_PROFILE }}
+          PRIVATE_ENDPOINT_IP: ${{ env.PRIVATE_ENDPOINT_IP }}
+          SQL_CONNECTION_STRING: ${{ env.SQL_CONNECTION_STRING }}
+          APP_NAME: ${{ env.APP_NAME }}
+          PUBLISH_PROFILE: ${{ env.PUBLISH_PROFILE }}
         
