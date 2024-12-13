@@ -53,6 +53,10 @@ jobs:
           echo "SQL_CONNECTION_STRING=$SQL_CONNECTION_STRING" >> $GITHUB_ENV
           echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
           echo "PUBLISH_PROFILE=$PUBLISH_PROFILE" >> $GITHUB_ENV
+      
+      - name: Check GITHUB_ENV Contents
+        run: cat $GITHUB_ENV
+        
 
   test:
     needs: plan-and-apply-terraform
