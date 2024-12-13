@@ -45,10 +45,10 @@ jobs:
         id: capture_outputs
         run: |
           cd infrastructure
-          PRIVATE_ENDPOINT_IP=$(terraform output -raw private_endpoint_ip 2>/dev/null | grep -v "::debug::")
-          SQL_CONNECTION_STRING=$(terraform output -raw sql_connection_string 2>/dev/null | grep -v "::debug::")
-          APP_NAME=$(terraform output -raw app_name 2>/dev/null | grep -v "::debug::")
-          PUBLISH_PROFILE=$(terraform output -raw publish_profile 2>/dev/null | grep -v "::debug::")
+          PRIVATE_ENDPOINT_IP=$(terraform output -raw private_endpoint_ip 2>/dev/null | tr -d '\n\r')
+          SQL_CONNECTION_STRING=$(terraform output -raw sql_connection_string 2>/dev/null | tr -d '\n\r')
+          APP_NAME=$(terraform output -raw app_name 2>/dev/null | tr -d '\n\r')
+          PUBLISH_PROFILE=$(terraform output -raw publish_profile 2>/dev/null | tr -d '\n\r')
           echo "PRIVATE_ENDPOINT_IP=$PRIVATE_ENDPOINT_IP" >> $GITHUB_ENV
           echo "SQL_CONNECTION_STRING=$SQL_CONNECTION_STRING" >> $GITHUB_ENV
           echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
