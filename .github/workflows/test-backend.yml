@@ -116,13 +116,13 @@ jobs:
       - name: Azure Web App Deploy
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ env.APP_NAME }}
+          app-name: ${{ secrets.APP_NAME }}  # Essayer avec secrets si nécessaire
           slot-name: production
-          publish-profile: ${{ env.PUBLISH_PROFILE }}
+          publish-profile: ${{ secrets.PUBLISH_PROFILE }}
           images: "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest"
         env:
-          PRIVATE_ENDPOINT_IP: ${{env.PRIVATE_ENDPOINT_IP }}
-          SQL_CONNECTION_STRING: ${{env.SQL_CONNECTION_STRING }}
-          APP_NAME: ${{env.APP_NAME }}
-          PUBLISH_PROFILE: ${{env.PUBLISH_PROFILE }}
+          PRIVATE_ENDPOINT_IP: ${{ secrets.PRIVATE_ENDPOINT_IP }}
+          SQL_CONNECTION_STRING: ${{ secrets.SQL_CONNECTION_STRING }}
+          APP_NAME: ${{ secrets.APP_NAME }}
+          PUBLISH_PROFILE: ${{ secrets.PUBLISH_PROFILE }}
         
