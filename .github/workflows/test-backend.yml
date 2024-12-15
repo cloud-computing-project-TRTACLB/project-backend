@@ -139,16 +139,20 @@ jobs:
         id: retrieve_publish_profile
         run: |
           az webapp deployment list-publishing-profiles \
-          --name ${{ needs.plan-and-apply-terraform.outputs.app_name }} \
-          --resource-group ${{needs.plan-and-apply-terraform.outputs.rg_name}} \
-          --query "[?publishMethod=='MSDeploy'].{publishProfile:profileContent}" -o tsv > publish_profile.xml
+          --name "${{ needs.plan-and-apply-terraform.outputs.app_name }}" \
+          --resource-group "${{ needs.plan-and-apply-terraform.outputs.rg_name }}" \
+          --query "[0].profileContent" -o tsv > publish_profile.xml
+        
+      - name: Debug Publish Profile
+        run: cat publish_profile.xml
         
       - name: Azure Web App Deploy
         uses: azure/webapps-deploy@v2
         with:
           app-name: "${{ needs.plan-and-apply-terraform.outputs.app_name }}"
           slot-name: "production"
-          publish-profile: ./publish_profile.xml
-          images: "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest" 
+          publish-profile: publish_profile.xml
+          images: "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest"
+  
 
         
