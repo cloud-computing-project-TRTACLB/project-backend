@@ -56,8 +56,10 @@ jobs:
           echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
           echo "PUBLISH_PROFILE=$PUBLISH_PROFILE" >> $GITHUB_ENV
       
-
       
+      - name: Check GITHUB_ENV Contents Last Step
+        run: cat $GITHUB_ENV
+        
       - name: Debugging - Show environment variables
         run: |
           echo "APP_NAME=${{ env.APP_NAME }}"
