@@ -11,6 +11,7 @@ jobs:
     outputs:
       app_name: ${{ steps.capture_outputs.outputs.app_name }}
       publish_profile: ${{ steps.capture_outputs.outputs.publish_profile }}
+      rg_name: ${{ steps.capture_outputs.outputs.rg_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -56,6 +57,7 @@ jobs:
           PUBLISH_PROFILE=$(terraform output -raw publish_profile 2>/dev/null)
           echo "::set-output name=app_name::$(terraform output -raw app_name 2>/dev/null)"
           echo "::set-output name=publish_profile::$(terraform output -raw publish_profile 2>/dev/null)"
+          echo "::set-output name=rg_name::$(terraform output -raw rg_name 2>/dev/null)"
           echo "PRIVATE_ENDPOINT_IP=$PRIVATE_ENDPOINT_IP" >> $GITHUB_ENV
           echo "SQL_CONNECTION_STRING=$SQL_CONNECTION_STRING" >> $GITHUB_ENV
           echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
@@ -132,13 +134,21 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Retrieve Publish Profile
+        id: retrieve_publish_profile
+        run: |
+          az webapp deployment list-publishing-profiles \
+          --name ${{ needs.plan-and-apply-terraform.outputs.app_name }} \
+          --resource-group ${{needs.plan-and-apply-terraform.outputs.rg_name}} \
+          --query "[?publishMethod=='MSDeploy'].{publishProfile:profileContent}" -o tsv > publish_profile.xml
         
       - name: Azure Web App Deploy
         uses: azure/webapps-deploy@v2
         with:
           app-name: "${{ needs.plan-and-apply-terraform.outputs.app_name }}"
           slot-name: "production"
-          publish-profile: "${{ needs.plan-and-apply-terraform.outputs.publish_profile }}"
+          publish-profile: ./publish_profile.xml
           images: "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest" 
 
         
