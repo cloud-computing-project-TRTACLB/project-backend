@@ -146,13 +146,15 @@ jobs:
       - name: Debug Publish Profile
         run: cat publish_profile.xml
         
-      - name: Azure Web App Deploy
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: "${{ needs.plan-and-apply-terraform.outputs.app_name }}"
-          slot-name: "production"
-          publish-profile: publish_profile.xml
-          images: "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest"
+      - name: Configure Web App for Docker Image
+        run: |
+          az webapp config container set \
+            --name "${{ needs.plan-and-apply-terraform.outputs.app_name }}" \
+            --resource-group "${{ needs.plan-and-apply-terraform.outputs.rg_name }}" \
+            --docker-custom-image-name "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest" \
+            --docker-registry-server-url "https://ghcr.io" \
+            --docker-registry-server-user "${{ github.actor }}" \
+            --docker-registry-server-password "${{ secrets.GITHUB_TOKEN }}"
   
 
         
