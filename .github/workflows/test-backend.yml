@@ -155,6 +155,12 @@ jobs:
             --docker-registry-server-url "https://ghcr.io" \
             --docker-registry-server-user "${{ github.actor }}" \
             --docker-registry-server-password "${{ secrets.GITHUB_TOKEN }}"
+      
+      - name: Restart Azure Web App
+        run: |
+          az webapp restart \
+            --name "${{ needs.plan-and-apply-terraform.outputs.app_name }}" \
+            --resource-group "${{ needs.plan-and-apply-terraform.outputs.rg_name }}"
   
 
         
