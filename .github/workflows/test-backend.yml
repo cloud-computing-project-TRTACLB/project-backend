@@ -8,6 +8,9 @@ on:
 jobs:
   plan-and-apply-terraform:
     runs-on: ubuntu-latest
+    outputs:
+      app_name: ${{ steps.capture_outputs.outputs.app_name }}
+      publish_profile: ${{ steps.capture_outputs.outputs.publish_profile }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -51,6 +54,8 @@ jobs:
           SQL_CONNECTION_STRING=$(terraform output -raw sql_connection_string 2>/dev/null)
           APP_NAME=$(terraform output -raw app_name 2>/dev/null)
           PUBLISH_PROFILE=$(terraform output -raw publish_profile 2>/dev/null)
+          echo "::set-output name=app_name::$(terraform output -raw app_name 2>/dev/null)"
+          echo "::set-output name=publish_profile::$(terraform output -raw publish_profile 2>/dev/null)"
           echo "PRIVATE_ENDPOINT_IP=$PRIVATE_ENDPOINT_IP" >> $GITHUB_ENV
           echo "SQL_CONNECTION_STRING=$SQL_CONNECTION_STRING" >> $GITHUB_ENV
           echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
@@ -59,7 +64,7 @@ jobs:
       
       - name: Check GITHUB_ENV Contents Last Step
         run: cat $GITHUB_ENV
-        
+
       - name: Debugging - Show environment variables
         run: |
           echo "APP_NAME=${{ env.APP_NAME }}"
@@ -96,7 +101,7 @@ jobs:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
   build-and-deploy:
-    needs: test
+    needs: [plan-and-apply-terraform, test]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -131,12 +136,9 @@ jobs:
       - name: Azure Web App Deploy
         uses: azure/webapps-deploy@v2
         with:
-          app-name: "${{ env.APP_NAME }}"          # Utilisation de la variable APP_NAME
+          app-name: "${{ needs.plan-and-apply-terraform.outputs.app_name }}"
           slot-name: "production"
-          publish-profile: "${{ env.PUBLISH_PROFILE }}"  # Utilisation de la variable PUBLISH_PROFILE
+          publish-profile: "${{ needs.plan-and-apply-terraform.outputs.publish_profile }}"
           images: "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest"
-        env:
-          APP_NAME: ${{ env.APP_NAME }}           # Définit explicitement les variables pour éviter les conflits
-          PUBLISH_PROFILE: ${{ env.PUBLISH_PROFILE }}
 
         
