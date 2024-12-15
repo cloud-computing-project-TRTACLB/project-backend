@@ -139,6 +139,6 @@ jobs:
           app-name: "${{ needs.plan-and-apply-terraform.outputs.app_name }}"
           slot-name: "production"
           publish-profile: "${{ needs.plan-and-apply-terraform.outputs.publish_profile }}"
-          images: "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest"
+          images: "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest" 
 
         
