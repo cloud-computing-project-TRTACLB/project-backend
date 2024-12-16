@@ -50,18 +50,31 @@ def token_required(f):
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
+    print("Received data:", data)  # Debugging
     username = data.get('username')
-    password = str(data.get('password'))
+    password = data.get('password')
 
     if not username or not password:
         return jsonify({'message': 'Username and password are required!'}), 400
 
     if username in users:
-        return jsonify({'message': 'User already exists!'}), 409
+        return jsonify({'message': 'User already exists!'}), 400
 
-    # Hash the password for storage
-    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+    hashed_password = generate_password_hash(password, method='sha256')
     users[username] = {'password': hashed_password}
+
+    # Insert the new user into the database
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
+        connection.commit()
+    except Exception as e:
+        return jsonify({'message': f'An error occurred: {str(e)}'}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
     return jsonify({'message': 'User registered successfully!'}), 201
 
 
