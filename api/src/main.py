@@ -62,6 +62,8 @@ def signup():
     users[username] = {'password': hashed_password}
     return jsonify({'message': 'User registered successfully!'}), 201
 
+
+
 # Route for user login (authentication)
 @app.route('/login', methods=['POST'])
 def login():
@@ -93,7 +95,6 @@ def profile():
 
 # Route for getting items
 @app.route('/items', methods=['GET'])
-@token_required
 def get_items():
     return jsonify(items)
 
