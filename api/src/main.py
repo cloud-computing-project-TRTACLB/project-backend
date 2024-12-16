@@ -12,6 +12,8 @@ load_dotenv()
 # Charger les informations de connexion à la base de données depuis les variables d'environnement
 private_endpoint_ip = os.getenv('PRIVATE_ENDPOINT_IP')
 sql_connection_string = os.getenv('SQL_CONNECTION_STRING')
+
+sql_connection ="mssql+pyodbc:///?odbc_connect=Driver=***ODBC Driver 18 for SQL Server***;Server=tcp:"+sql_connection_string+".database.windows.net,1433;Database=userdb;Uid=adminuser;***;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
 app = Flask(__name__)
 
 # Retrieve the secret key from the environment
@@ -100,7 +102,7 @@ def get_items():
 
 # Exemple de connexion à la base de données SQL Azure
 def get_db_connection():
-    connection = pyodbc.connect(sql_connection_string)
+    connection = pyodbc.connect(sql_connection)
     return connection
 
 # Utilisation de cette connexion dans une route
