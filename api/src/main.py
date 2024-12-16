@@ -11,12 +11,13 @@ load_dotenv()
 
 # Charger les informations de connexion à la base de données depuis les variables d'environnement
 private_endpoint_ip = os.getenv('PRIVATE_ENDPOINT_IP')
-sql_connection_string = os.getenv('SQL_CONNECTION_STRING')
+SQL_CONNECTION_STRING = os.getenv('SQL_CONNECTION_STRING')
 app = Flask(__name__)
 
 # Retrieve the secret key from the environment
 SECRET_KEY = os.getenv("SECRET_KEY")
 print("Secret key:", SECRET_KEY)  # Debugging
+print("SQL connection string:", SQL_CONNECTION_STRING)  # Debugging
 # In-memory user database
 users = {}
 
@@ -44,6 +45,10 @@ def token_required(f):
         return f(*args, **kwargs)
     return decorated
 
+# Exemple de connexion à la base de données SQL Azure
+def get_db_connection():
+    connection = pyodbc.connect(SQL_CONNECTION_STRING)
+    return connection
 # Route for user registration (signup)
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -54,13 +59,33 @@ def signup():
     if not username or not password:
         return jsonify({'message': 'Username and password are required!'}), 400
 
-    if username in users:
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Check if the user already exists
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    existing_user = cursor.fetchone()
+    if existing_user:
+        cursor.close()
+        connection.close()
         return jsonify({'message': 'User already exists!'}), 409
 
     # Hash the password for storage
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-    users[username] = {'password': hashed_password}
+
+    try:
+        # Insert the new user into the database
+        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
+        connection.commit()
+    except Exception as e:
+        cursor.close()
+        connection.close()
+        return jsonify({'message': f'An error occurred: {str(e)}'}), 500
+
+    cursor.close()
+    connection.close()
     return jsonify({'message': 'User registered successfully!'}), 201
+
 
 
 
@@ -68,18 +93,26 @@ def signup():
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    print("Received data:", data)  # Debugging
     username = data.get('username')
     password = str(data.get('password'))
 
     if not username or not password:
         return jsonify({'message': 'Username and password are required!'}), 400
 
-    user = users.get(username)
-    if not user or not check_password_hash(user['password'], password):
-        return jsonify({'message': 'Invalid credentials!'}), 401
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Check if the user exists
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+    cursor.close()
+    connection.close()
+
+    if not user or not check_password_hash(user[1], password):
+        return jsonify({'message': 'Invalid username or password!'}), 401
+
     expiration = datetime.datetime.now() + datetime.timedelta(hours=1)
-    # Generate a JWT token
+    # Generate a token
     token = jwt.encode({
         'username': username,
         'exp': expiration
@@ -87,21 +120,19 @@ def login():
 
     return jsonify({'token': token})
 
+# Route for getting items
+@app.route('/items', methods=['GET'])
+def get_items():
+    return jsonify(items)
+
 # Protected route example
 @app.route('/profile', methods=['GET'])
 @token_required
 def profile():
     return jsonify({'message': f'Welcome, {request.user}!'})
 
-# Route for getting items
-@app.route('/items', methods=['GET'])
-def get_items():
-    return jsonify(items)
 
-# Exemple de connexion à la base de données SQL Azure
-def get_db_connection():
-    connection = pyodbc.connect(sql_connection_string)
-    return connection
+
 
 # Utilisation de cette connexion dans une route
 @app.route('/data', methods=['GET'])
