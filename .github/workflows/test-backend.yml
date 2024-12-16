@@ -8,6 +8,11 @@ on:
 jobs:
   plan-and-apply-terraform:
     runs-on: ubuntu-latest
+    outputs:
+      app_name: ${{ steps.capture_outputs.outputs.app_name }}
+      publish_profile: ${{ steps.capture_outputs.outputs.publish_profile }}
+      rg_name: ${{ steps.capture_outputs.outputs.rg_name }}
+      sql_connection_string: ${{ steps.capture_outputs.outputs.sql_connection_string }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -47,10 +52,14 @@ jobs:
         id: capture_outputs
         run: |
           cd infrastructure
-          echo "app_name=$(terraform output -raw app_name)" >> $GITHUB_ENV
-          echo "publish_profile=$(terraform output -raw publish_profile)" >> $GITHUB_ENV
-          echo "rg_name=$(terraform output -raw rg_name)" >> $GITHUB_ENV
-          echo "sql_connection_string=$(terraform output -raw sql_connection_string)" >> $GITHUB_ENV
+          PRIVATE_ENDPOINT_IP=$(terraform output -raw private_endpoint_ip 2>/dev/null)
+          SQL_CONNECTION_STRING=$(terraform output -raw sql_connection_string 2>/dev/null)
+          APP_NAME=$(terraform output -raw app_name 2>/dev/null)
+          PUBLISH_PROFILE=$(terraform output -raw publish_profile 2>/dev/null)
+          echo "::set-output name=app_name::$(terraform output -raw app_name 2>/dev/null)"
+          echo "::set-output name=publish_profile::$(terraform output -raw publish_profile 2>/dev/null)"
+          echo "::set-output name=rg_name::$(terraform output -raw rg_name 2>/dev/null)"
+          echo "::set-output name=sql_connection_string::$(terraform output -raw sql_connection_string 2>/dev/null)"
 
 
   test:
@@ -72,17 +81,17 @@ jobs:
 
       - name: Debogging Terraform Outputs
         run: |
-          echo "SQL Connection String: ${{ env.sql_connection_string}}"
-          echo "App Name: ${{ env.app_name }}"
-          echo "Publish Profile: ${{ env.publish_profile }}"
-          echo "Resource Group Name: ${{ env.rg_name }}"
+          echo "SQL Connection String: ${{ needs.plan-and-apply-terraform.outputs.sql_connection_string }}"
+          echo "App Name: ${{ needs.plan-and-apply-terraform.outputs.app_name }}"
+          echo "Publish Profile: ${{ needs.plan-and-apply-terraform.outputs.publish_profile }}"
+          echo "Resource Group Name: ${{ needs.plan-and-apply-terraform.outputs.rg_name }}"
 
       - name: Run tests
         run: |
           pytest
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          SQL_CONNECTION_STRING: ${{ env.sql_connection_string }}
+          SQL_CONNECTION_STRING: ${{ needs.plan-and-apply-terraform.outputs.sql_connection_string }}
 
   build-and-deploy:
     needs: [plan-and-apply-terraform, test]
@@ -112,7 +121,7 @@ jobs:
           push: true
           tags: ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest
           build-args: |
-            SQL_CONNECTION_STRING=${{ env.sql_connection_string }}
+            SQL_CONNECTION_STRING=${{ needs.plan-and-apply-terraform.outputs.sql_connection_string }}
             SECRET_KEY=${{ secrets.SECRET_KEY }}
       
       - name: Azure Login  
@@ -123,9 +132,9 @@ jobs:
       - name: Configure Web App for Docker Image
         run: |
           az webapp config container set \
-            --name "${{ env.app_name }}" \
-            --resource-group "${{ env.rg_name }}" \
-            --settings "SQL_CONNECTION_STRING=${{ env.sql_connection_string }}" \
+            --name "${{ needs.plan-and-apply-terraform.outputs.app_name }}" \
+            --resource-group "${{ needs.plan-and-apply-terraform.outputs.rg_name }}" \
+            --settings "SQL_CONNECTION_STRING=${{ needs.plan-and-apply-terraform.outputs.sql_connection_string }}" \
             "SECRET_KEY=${{ secrets.SECRET_KEY }}" \
             --docker-custom-image-name "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest" \
             --docker-registry-server-url "https://ghcr.io" \
@@ -135,8 +144,8 @@ jobs:
       - name: Restart Azure Web App
         run: |
           az webapp restart \
-            --name "${{ env.app_name }}" \
-            --resource-group "${{ env.rg_name }}"
+            --name "${{ needs.plan-and-apply-terraform.outputs.app_name }}" \
+            --resource-group "${{ needs.plan-and-apply-terraform.outputs.rg_name }}"
   
 
         
