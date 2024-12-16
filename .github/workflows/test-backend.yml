@@ -60,26 +60,7 @@ jobs:
           echo "::set-output name=publish_profile::$(terraform output -raw publish_profile 2>/dev/null)"
           echo "::set-output name=rg_name::$(terraform output -raw rg_name 2>/dev/null)"
           echo "::set-output name=sql_connection_string::$(terraform output -raw sql_connection_string 2>/dev/null)"
-          echo "PRIVATE_ENDPOINT_IP=$PRIVATE_ENDPOINT_IP" >> $GITHUB_ENV
-          echo "SQL_CONNECTION_STRING=$SQL_CONNECTION_STRING" >> $GITHUB_ENV
-          echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
-          echo "PUBLISH_PROFILE=$PUBLISH_PROFILE" >> $GITHUB_ENV
-      
-      
-      - name: Check GITHUB_ENV Contents Last Step
-        run: cat $GITHUB_ENV
 
-      - name: Debugging - Show environment variables
-        run: |
-          echo "APP_NAME=${{ env.APP_NAME }}"
-          echo "PUBLISH_PROFILE=${{ env.PUBLISH_PROFILE }}"
-          echo "PRIVATE_ENDPOINT_IP=${{ env.PRIVATE_ENDPOINT_IP }}"
-          echo "SQL_CONNECTION_STRING=${{ env.SQL_CONNECTION_STRING }}"
-        env:
-          PRIVATE_ENDPOINT_IP: ${{ env.PRIVATE_ENDPOINT_IP }}
-          SQL_CONNECTION_STRING: ${{ env.SQL_CONNECTION_STRING }}
-          APP_NAME: ${{ env.APP_NAME }}
-          PUBLISH_PROFILE: ${{ env.PUBLISH_PROFILE }}
 
   test:
     needs: plan-and-apply-terraform
@@ -98,11 +79,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Debogging Terraform Outputs
+        run: |
+          echo "SQL Connection String: ${{ needs.plan-and-apply-terraform.outputs.sql_connection_string }}"
+          echo "App Name: ${{ needs.plan-and-apply-terraform.outputs.app_name }}"
+          echo "Publish Profile: ${{ needs.plan-and-apply-terraform.outputs.publish_profile }}"
+          echo "Resource Group Name: ${{ needs.plan-and-apply-terraform.outputs.rg_name }}"
+
       - name: Run tests
         run: |
           pytest
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          SQL_CONNECTION_STRING: ${{ needs.plan-and-apply-terraform.outputs.sql_connection_string }}
 
   build-and-deploy:
     needs: [plan-and-apply-terraform, test]
@@ -145,6 +134,8 @@ jobs:
           az webapp config container set \
             --name "${{ needs.plan-and-apply-terraform.outputs.app_name }}" \
             --resource-group "${{ needs.plan-and-apply-terraform.outputs.rg_name }}" \
+            --settings "SQL_CONNECTION_STRING=${{ needs.plan-and-apply-terraform.outputs.sql_connection_string }}" \
+            "SECRET_KEY=${{ secrets.SECRET_KEY }}" \
             --docker-custom-image-name "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest" \
             --docker-registry-server-url "https://ghcr.io" \
             --docker-registry-server-user "${{ github.actor }}" \
