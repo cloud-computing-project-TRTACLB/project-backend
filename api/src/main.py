@@ -12,8 +12,6 @@ load_dotenv()
 # Charger les informations de connexion à la base de données depuis les variables d'environnement
 private_endpoint_ip = os.getenv('PRIVATE_ENDPOINT_IP')
 sql_connection_string = os.getenv('SQL_CONNECTION_STRING')
-
-sql_connection ="mssql+pyodbc:///?odbc_connect=Driver={ODBC Driver 18 for SQL Server};Server=tcp:"+sql_connection_string+",1433;Database=userdb;Uid=adminuser;Pwd={P@ssword123};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
 app = Flask(__name__)
 
 # Retrieve the secret key from the environment
@@ -50,31 +48,18 @@ def token_required(f):
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
-    print("Received data:", data)  # Debugging
     username = data.get('username')
-    password = data.get('password')
+    password = str(data.get('password'))
 
     if not username or not password:
         return jsonify({'message': 'Username and password are required!'}), 400
 
     if username in users:
-        return jsonify({'message': 'User already exists!'}), 400
+        return jsonify({'message': 'User already exists!'}), 409
 
-    hashed_password = generate_password_hash(password, method='sha256')
+    # Hash the password for storage
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
     users[username] = {'password': hashed_password}
-
-    # Insert the new user into the database
-    connection = get_db_connection()
-    cursor = connection.cursor()
-    try:
-        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
-        connection.commit()
-    except Exception as e:
-        return jsonify({'message': f'An error occurred: {str(e)}'}), 500
-    finally:
-        cursor.close()
-        connection.close()
-
     return jsonify({'message': 'User registered successfully!'}), 201
 
 
@@ -115,7 +100,7 @@ def get_items():
 
 # Exemple de connexion à la base de données SQL Azure
 def get_db_connection():
-    connection = pyodbc.connect(sql_connection)
+    connection = pyodbc.connect(sql_connection_string)
     return connection
 
 # Utilisation de cette connexion dans une route
