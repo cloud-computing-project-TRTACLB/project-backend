@@ -4,21 +4,23 @@ from main import app, SECRET_KEY, items
 import os
 import pyodbc
 
-sql_connection_string = os.getenv('SQL_CONNECTION_STRING')
-sql_connection ="mssql+pyodbc:///?odbc_connect=Driver={ODBC Driver 18 for SQL Server};Server=tcp:"+sql_connection_string+",1433;Database=userdb;Uid=adminuser;Pwd={P@ssword123};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
+
+
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
     with app.test_client() as client:
         yield client
-        
+
 def test_db_connection():
     """
     Test la connexion à la base de données.
     Vérifie si une connexion peut être établie avec la chaîne donnée.
     """
     sql_connection_string = os.getenv("SQL_CONNECTION_STRING")
-    assert sql_connection_string is not None, "La variable d'environnement SQL_CONNECTION_STRING est manquante."
+    sql_connection ="mssql+pyodbc:///?odbc_connect=Driver={ODBC Driver 18 for SQL Server};Server=tcp:"+sql_connection_string+",1433;Database=userdb;Uid=adminuser;Pwd={P@ssword123};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
+    print("SQL Connection String:", sql_connection)  # Debugging
+    assert sql_connection is not None, "La variable d'environnement SQL_CONNECTION_STRING est manquante."
 
     try:
         connection = pyodbc.connect(sql_connection)
