@@ -1,10 +1,6 @@
 import pytest
 import jwt
 from main import app, SECRET_KEY, items
-import os
-import pyodbc
-
-
 
 @pytest.fixture
 def client():
