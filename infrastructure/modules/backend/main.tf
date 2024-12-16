@@ -19,7 +19,7 @@ resource "azurerm_linux_web_app" "app" {
   virtual_network_subnet_id = var.virtual_network_subnet_id
 
   app_settings = {
-    "DATABASE_URL" = "mssql+pyodbc:///?odbc_connect=Driver={ODBC Driver 18 for SQL Server};Server=tcp:${azurerm_mssql_server.server.fully_qualified_domain_name},1433;Database=userdb;Uid=adminuser;Pwd={P@ssword123};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
+    "DATABASE_URL" = module.database_user.sql_connection_string
   }
 }
 
