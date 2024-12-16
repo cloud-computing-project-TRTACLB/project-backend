@@ -12,6 +12,7 @@ jobs:
       app_name: ${{ steps.capture_outputs.outputs.app_name }}
       publish_profile: ${{ steps.capture_outputs.outputs.publish_profile }}
       rg_name: ${{ steps.capture_outputs.outputs.rg_name }}
+      sql_connection_string: ${{ steps.capture_outputs.outputs.sql_connection_string }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -58,6 +59,7 @@ jobs:
           echo "::set-output name=app_name::$(terraform output -raw app_name 2>/dev/null)"
           echo "::set-output name=publish_profile::$(terraform output -raw publish_profile 2>/dev/null)"
           echo "::set-output name=rg_name::$(terraform output -raw rg_name 2>/dev/null)"
+          echo "::set-output name=sql_connection_string::$(terraform output -raw sql_connection_string 2>/dev/null)"
           echo "PRIVATE_ENDPOINT_IP=$PRIVATE_ENDPOINT_IP" >> $GITHUB_ENV
           echo "SQL_CONNECTION_STRING=$SQL_CONNECTION_STRING" >> $GITHUB_ENV
           echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
@@ -129,22 +131,14 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest
+          build-args: |
+            SQL_CONNECTION_STRING=${{ needs.plan-and-apply-terraform.outputs.sql_connection_string }}
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
       
       - name: Azure Login  
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      
-      - name: Retrieve Publish Profile
-        id: retrieve_publish_profile
-        run: |
-          az webapp deployment list-publishing-profiles \
-          --name "${{ needs.plan-and-apply-terraform.outputs.app_name }}" \
-          --resource-group "${{ needs.plan-and-apply-terraform.outputs.rg_name }}" \
-          --query "[0].profileContent" -o tsv > publish_profile.xml
-        
-      - name: Debug Publish Profile
-        run: cat publish_profile.xml
         
       - name: Configure Web App for Docker Image
         run: |
