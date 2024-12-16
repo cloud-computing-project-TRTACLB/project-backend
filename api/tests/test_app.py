@@ -1,8 +1,8 @@
 import pytest
 import jwt
-from main import app,get_db_connection
-
-
+from main import app
+import pyodbc
+import os
 
 @pytest.fixture
 def client():
@@ -16,8 +16,11 @@ def test_db_connection():
     Test la connexion à la base de données.
     Vérifie si une connexion peut être établie avec la chaîne donnée.
     """
+    sql_connection_string = os.getenv("SQL_CONNECTION_STRING")
+    assert sql_connection_string is not None, "La variable d'environnement SQL_CONNECTION_STRING est manquante."
+
     try:
-        connection = get_db_connection()
+        connection = pyodbc.connect(sql_connection_string)
         cursor = connection.cursor()
         cursor.execute("SELECT 1")  # Test minimal pour vérifier la connexion
         result = cursor.fetchone()
