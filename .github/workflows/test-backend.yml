@@ -134,8 +134,6 @@ jobs:
           az webapp config container set \
             --name "${{ needs.plan-and-apply-terraform.outputs.app_name }}" \
             --resource-group "${{ needs.plan-and-apply-terraform.outputs.rg_name }}" \
-            --settings "SQL_CONNECTION_STRING=${{ needs.plan-and-apply-terraform.outputs.sql_connection_string }}" \
-            "SECRET_KEY=${{ secrets.SECRET_KEY }}" \
             --docker-custom-image-name "ghcr.io/cloud-computing-project-trtaclb/my-flask-api:latest" \
             --docker-registry-server-url "https://ghcr.io" \
             --docker-registry-server-user "${{ github.actor }}" \
