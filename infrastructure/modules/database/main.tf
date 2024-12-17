@@ -7,7 +7,13 @@
     administrator_login         = var.admin_user
     administrator_login_password = var.admin_password
   }
-
+  # Autoriser les services Azure à accéder au serveur SQL
+resource "azurerm_mssql_firewall_rule" "allow_azure_services" {
+  name                = "AllowAzureServices"
+  server_id           = azurerm_mssql_server.server.id
+  start_ip_address    = "0.0.0.0"
+  end_ip_address      = "0.0.0.0"
+}
   # Génération d'un suffixe aléatoire pour nommer la base de données
   resource "random_id" "db_suffix" {
     byte_length = 6
@@ -31,6 +37,12 @@
       private_connection_resource_id = azurerm_mssql_server.server.id
       subresource_names              = ["sqlServer"]
       is_manual_connection           = false  # Connexion automatique
+    }
+      private_dns_zone_group {
+    name = "example-dns-zone-group"
+    private_dns_zone_ids = [
+      azurerm_private_dns_zone.sql_private_dns.id
+    ]
     }
   }
 

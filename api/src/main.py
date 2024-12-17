@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import os
 import datetime
 import pyodbc
+import socket
 # Load the .env file
 load_dotenv()
 
@@ -16,7 +17,11 @@ app = Flask(__name__)
 
 # Retrieve the secret key from the environment
 SECRET_KEY = os.getenv("SECRET_KEY")
+SQL_CONNECTION = "mssql+pyodbc:///?odbc_connect=Driver={ODBC Driver 18 for SQL Server};Server=tcp:"+sql_connection_string+",1433;Database=userdb;Uid=adminuser;Pwd={P%40ssword123};Encrypt=yes;TrustServerCertificate=yes;Connection Timeout=30;"
+
+ 
 print("Secret key:", SECRET_KEY)  # Debugging
+print("SQL Connection:", SQL_CONNECTION)  # Debugging
 # In-memory user database
 users = {}
 
@@ -100,8 +105,9 @@ def get_items():
 
 # Exemple de connexion à la base de données SQL Azure
 def get_db_connection():
-    connection = pyodbc.connect(sql_connection_string)
+    connection = pyodbc.connect(SQL_CONNECTION)
     return connection
+
 
 # Utilisation de cette connexion dans une route
 @app.route('/data', methods=['GET'])
@@ -139,5 +145,42 @@ def post_data():
 
                 return jsonify({'message': 'Data inserted successfully!'}), 201
    
+
+@app.route('/test-db', methods=['GET'])
+def test_db():
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT 1")
+        result = cursor.fetchone()
+        cursor.close()
+        connection.close()
+        return jsonify({'message': 'Database connection successful!', 'result': result[0]})
+    except Exception as e:
+        return jsonify({'message': f'Database connection failed: {str(e)}'}), 500
+    
+@app.route('/test-connectivity', methods=['GET'])
+def test_connectivity():
+    server = "<nom-du-serveur>.database.windows.net"
+    port = 1433
+
+    try:
+        # Résolution DNS
+        ip = socket.gethostbyname(server)
+        
+        # Test de la connexion au port TCP
+        sock = socket.create_connection((server, port), timeout=5)
+        sock.close()
+        
+        return jsonify({
+            "message": "Connection successful!",
+            "resolved_ip": ip,
+            "port": port
+        })
+    except Exception as e:
+        return jsonify({
+            "message": f"Connection failed: {str(e)}"
+        }), 500
+       
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 80)))
