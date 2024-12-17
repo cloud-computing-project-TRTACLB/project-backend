@@ -181,6 +181,16 @@ def test_connectivity():
         return jsonify({
             "message": f"Connection failed: {str(e)}"
         }), 500
-       
+
+@app.route('/test-env', methods=['GET'])
+def test_env():
+    secret_var = os.getenv('SECRET_KEY')
+    sql_var = os.getenv('SQL_CONNECTION_STRING')
+    if not secret_var:
+        return jsonify({'message': 'Environment variable not set!'}), 404
+    if not sql_var:
+        return jsonify({'message': 'Environment variable not set!'}), 404
+    return jsonify({'secret_var': secret_var, 'sql_var': sql_var})
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 80)))

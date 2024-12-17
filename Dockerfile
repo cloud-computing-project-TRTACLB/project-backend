@@ -4,23 +4,30 @@ FROM python:3.10-slim
 # Mettre à jour pip
 RUN pip install --upgrade pip
 
-# Installer les dépendances système nécessaires pour pyodbc et le pilote ODBC SQL Server
-RUN apt-get update && apt-get install -y \
-    curl \
-    gnupg \
-    unixodbc \
-    unixodbc-dev \
-    libgssapi-krb5-2 \
-    && curl https://packages.microsoft.com/keys/microsoft.asc | tee /etc/apt/trusted.gpg.d/microsoft.asc \
-    && curl https://packages.microsoft.com/config/debian/$(lsb_release -rs)/prod.list | tee /etc/apt/sources.list.d/mssql-release.list \
-    && apt-get update \
-    && ACCEPT_EULA=Y apt-get install -y msodbcsql18 mssql-tools \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
 
 # Définir le répertoire de travail dans le conteneur
 WORKDIR /app
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential \
+    curl \
+    apt-utils \
+    gnupg2 &&\
+    rm -rf /var/lib/apt/lists/* && \
+    pip install --upgrade pip
+
+RUN apt-get update
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+RUN curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list 
+
+
+RUN exit
+RUN apt-get update
+RUN env ACCEPT_EULA=Y apt-get install -y msodbcsql18 
+
+COPY /odbc.ini / 
+RUN odbcinst -i -s -f /odbc.ini -l
+RUN cat /etc/odbc.ini
 # Copier les fichiers nécessaires dans le conteneur
 COPY requirements.txt /app/requirements.txt
 COPY api/src /app/src
