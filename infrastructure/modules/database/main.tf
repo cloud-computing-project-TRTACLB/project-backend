@@ -41,7 +41,7 @@ resource "azurerm_mssql_firewall_rule" "allow_azure_services" {
   }
 
   # Génération d'un suffixe pour le Private Endpoint
-  resource "random_id" "rule_suffix" {
+  resource "random_id" "rule_suffix" { 
     byte_length = 6
   }
 
