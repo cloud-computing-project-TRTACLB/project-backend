@@ -38,12 +38,6 @@ resource "azurerm_mssql_firewall_rule" "allow_azure_services" {
       subresource_names              = ["sqlServer"]
       is_manual_connection           = false  # Connexion automatique
     }
-      private_dns_zone_group {
-    name = "example-dns-zone-group"
-    private_dns_zone_ids = [
-      azurerm_private_dns_zone.sql_private_dns.id
-    ]
-    }
   }
 
   # Génération d'un suffixe pour le Private Endpoint
