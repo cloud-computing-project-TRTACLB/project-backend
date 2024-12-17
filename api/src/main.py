@@ -161,7 +161,7 @@ def test_db():
     
 @app.route('/test-connectivity', methods=['GET'])
 def test_connectivity():
-    server = "<nom-du-serveur>.database.windows.net"
+    server = sql_connection_string
     port = 1433
 
     try:
